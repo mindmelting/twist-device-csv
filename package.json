@@ -2,7 +2,9 @@
   "name": "twist-device-csv",
   "version": "1.0.0",
   "description": "Command line tool to add devices to csv files for use with Twist",
-  "main": "twist-device-csv.js",
+  "bin": {
+    "twist-device-csv": "bin/twist-device-csv"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

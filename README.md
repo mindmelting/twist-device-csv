@@ -2,6 +2,15 @@
 Command line tool to add devices to csv files for use with Twist
 
 # Instructions
+
+Install the node module globally by running
+
+```javascript
+npm install -g
+```
+
+Copy the config.js file to a location within your project and from that location you can run the commands
+
 Initially run the add command to set up a resource file which will be a master version of the devices set up
 
 ```javascript
