@@ -4,7 +4,8 @@
 
 process.title = 'twist-device-csv';
 
-var config = require('./config'),
+var path = require('path'),
+    config = require(path.join(process.cwd(), 'config')),
     fs = require('fs'),
     glob = require('glob'),
     readline = require('readline'),
@@ -95,8 +96,10 @@ function outputDevices(devices) {
     });
 }
     
-function sanitiseDevices(path) {
-    glob(path + '*.scn.csv', function(err, files) {
+function sanitiseDevices(filePath) {
+    var test = path.join(process.cwd(), filePath, '*.scn.csv');
+    console.log(test);
+    glob(path.join(process.cwd(), filePath, '*.scn.csv'), function(err, files) {
         if (err) {
             console.log('Error reading files'.red.bold);
             console.log(err);

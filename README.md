@@ -24,7 +24,7 @@ node twist-device-csv.js remove
 This will display a list of devices. Enter the number of the device you wish to remove
 
 ```javascript
-node twist-device-csv.js sanitise path/
+node twist-device-csv.js sanitise path
 ```
 This will copy the resource file to all *.scn.csv files in the stated path
 
