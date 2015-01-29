@@ -9,22 +9,22 @@ var config = require('./config'),
         output: process.stdout
     }),
     addDevice = function() {
-        var deviceFields = [],
-            currentDeviceIndex = 0,
+        var fields = [],
+            currentIndex = 0,
             callback = function(answer) {
-                deviceFields.push(answer);
-                currentDeviceIndex++;
-                if (currentDeviceIndex < config.fields.length) {
-                    addDeviceField(config.fields[currentDeviceIndex], callback);
+                fields.push(answer);
+                currentIndex++;
+                if (currentIndex < config.fields.length) {
+                    queryUserForField(config.fields[currentIndex], callback);
                 } else {
-                    addDeviceToCsv(deviceFields);
+                    addDeviceToCsv(fields);
                 }
             };
 
-        addDeviceField(config.fields[currentDeviceIndex], callback);
+        queryUserForField(config.fields[currentIndex], callback);
     },
-    addDeviceField = function(deviceField, cb) {
-        rl.question('Add field - ' + deviceField.bold + ' :', function(answer) {
+    queryUserForField = function(field, cb) {
+        rl.question('Add field - ' + field.bold + ' :', function(answer) {
             cb(answer);
         });
     },
@@ -34,20 +34,23 @@ var config = require('./config'),
         fs.readFile(config.referenceFile, function(err, data) {
             if (err && err.code == 'ENOENT') {
                 console.log('Reference file does not exist'.red.bold);
+                process.kill(1);
             } else if (!err) {
                 csv.parse(data, {columns: true}, function(err, output) {
                     if (err) {
                         console.log('Error occured parsing reference file'.red.bold);
                         console.log(err);
+                        process.kill(1);
                     } else {
                         parsedCsv = output;
-                        console.log('Choose a device to remove');
+                        console.log('Choose a device to remove, e.g. 0');
                         outputDevices(parsedCsv);
                     }
                 });
             } else {
                 console.log('Error occured whilst opening reference file'.red.bold);
                 console.log(err);
+                process.kill(1);
             }
         });
         rl.on('line', function(input) {
@@ -80,8 +83,8 @@ var config = require('./config'),
             console.log(index + ' - ' + device.deviceName);
         });
     },
-    sanitiseDevices = function() {
-        glob('*.scn.csv', function(err, files) {
+    sanitiseDevices = function(path) {
+        glob(path + '*.scn.csv', function(err, files) {
             if (err) {
                 console.log('Error reading files'.red.bold);
                 console.log(err);
@@ -97,29 +100,6 @@ var config = require('./config'),
                 });
             }
         });
-    },
-    checkArguments = function() {
-        var validCommands = ['add', 'remove', 'sanitise', 'help'];
-
-        if (process.argv.length !== 3 ||
-            validCommands.indexOf(process.argv[2]) === -1) {
-            displayHelp();
-        } else {
-            verifyReferenceFile(function() {
-                if (process.argv[2] === 'add') {
-                    addDevice();
-                }
-                if (process.argv[2] === 'remove') {
-                    removeDevice();
-                }
-                if (process.argv[2] === 'sanitise') {
-                    sanitiseDevices();
-                }
-                if (process.argv[2] === 'help') {
-                    displayHelp();
-                }
-            });
-        }
     },
     verifyReferenceFile = function(cb) {
         fs.open(config.referenceFile, 'r', function(err, fd) {
@@ -141,11 +121,13 @@ var config = require('./config'),
             if (err) {
                 console.log('There was an error creating the reference file'.red.bold);
                 console.log(err);
+                process.kill(1);
             } else {
                 fs.writeFile(config.referenceFile, output, function(err) {
                     if (err) {
                         console.log('There was an error creating the reference file'.red.bold);
                         console.log(err);
+                        process.kill(1);
                     } else {
                         console.log('Created reference file'.green.bold);
                         cb();
@@ -164,6 +146,7 @@ var config = require('./config'),
                      if (err) {
                          console.log('There was an error appending the reference file'.red.bold);
                          console.log(err);
+                         process.kill(1);
                      } else {
                          console.log('Appended reference file with device'.green.bold);
                          rl.close();
@@ -172,13 +155,33 @@ var config = require('./config'),
              }
         });
     },
+    checkArguments = function() {
+        if (process.argv.length < 3) {
+            displayHelp();
+        } else {
+            verifyReferenceFile(function() {
+                switch(process.argv[2]) {
+                    case 'add':
+                        addDevice();
+                        break;
+                    case 'remove':
+                        removeDevice();
+                        break;
+                    case 'sanitise':
+                        sanitiseDevices(process.argv[3]);
+                        break;
+                    default:
+                        displayHelp();
+                }
+            });
+        }
+    },
     displayHelp = function() {
-        console.log('Instructions!'.red.bold);
         console.log('Commands available');
         console.log('-------------------'.rainbow.bold);
         console.log('add'.bold + ' - Add a new device to existing CSV files');
         console.log('remove'.bold + ' - Remove a device to existing CSV files');
-        console.log('sanitise'.bold + ' - Sanitise twist csv files with existing reference devices');
+        console.log('sanitise'.bold + ' PATH - Sanitise twist csv files in PATH with existing reference devices');
         process.exit(1);
     };
 process.stdin.setMaxListeners(0);
