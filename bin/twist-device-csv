@@ -10,7 +10,8 @@ var path = require('path'),
     glob = require('glob'),
     readline = require('readline'),
     colors = require('colors'),
-    csv = require('csv');
+    csv = require('csv'),
+    Promise = require('bluebird');
 
 var rl = readline.createInterface({
     input: process.stdin,
@@ -98,22 +99,32 @@ function outputDevices(devices) {
     
 function sanitiseDevices(filePath) {
     var test = path.join(process.cwd(), filePath, '*.scn.csv');
-    console.log(test);
     glob(path.join(process.cwd(), filePath, '*.scn.csv'), function(err, files) {
         if (err) {
             console.log('Error reading files'.red.bold);
             console.log(err);
         } else {
-            var stream = fs.createReadStream(config.referenceFile);
-            stream.setMaxListeners(1000);
-            files.forEach(function(fileName) {
-                stream.pipe(fs.createWriteStream(fileName));
-            });
-            stream.on('end', function() {
+            writeToFiles(files).then(function(fileNames) {
                 console.log('Copied devices to scenario CSVs'.green.bold);
+                fileNames.forEach(function(fileName) {
+                    console.log(fileName); 
+                });
                 process.kill(0); 
             });
         }
+    });
+}
+
+function writeToFiles(files) {
+    return Promise.map(files, function(fileName) {
+        return new Promise(function(resolve, reject) {
+            var stream = fs.createReadStream(config.referenceFile);
+
+            stream.pipe(fs.createWriteStream(fileName));
+            stream.on('end', function() {
+                resolve(fileName);
+            });
+        });
     });
 }
 
@@ -205,5 +216,4 @@ function displayHelp() {
     process.exit(1);
 }
 
-process.stdin.setMaxListeners(0);
 checkArguments();
