@@ -46,13 +46,13 @@ function removeDevice() {
     fs.readFile(config.referenceFile, function(err, data) {
         if (err && err.code == 'ENOENT') {
             console.log('Reference file does not exist'.red.bold);
-            process.kill(1);
+            process.exit(1);
         } else if (!err) {
             csv.parse(data, {columns: true}, function(err, output) {
                 if (err) {
                     console.log('Error occured parsing reference file'.red.bold);
                     console.log(err);
-                    process.kill(1);
+                    process.exit(1);
                 } else {
                     parsedCsv = output;
                     console.log('Choose a device to remove, e.g. 0');
@@ -62,7 +62,7 @@ function removeDevice() {
         } else {
             console.log('Error occured whilst opening reference file'.red.bold);
             console.log(err);
-            process.kill(1);
+            process.exit(1);
         }
     });
     rl.on('line', function(input) {
@@ -79,10 +79,10 @@ function removeDevice() {
                         if (err) {
                             console.log('There was an error creating the reference file'.red.bold);
                             console.log(err);
-                            process.kill(1);
+                            process.exit(1);
                         } else {
                             console.log('Removed device'.green.bold);
-                            process.kill(0);
+                            process.exit(0);
                         }
                     });
                 }
@@ -109,7 +109,7 @@ function sanitiseDevices(filePath) {
                 fileNames.forEach(function(fileName) {
                     console.log(fileName); 
                 });
-                process.kill(0); 
+                process.exit(0); 
             });
         }
     });
@@ -149,13 +149,13 @@ function createReferenceFile(cb, fields) {
         if (err) {
             console.log('There was an error creating the reference file'.red.bold);
             console.log(err);
-            process.kill(1);
+            process.exit(1);
         } else {
             fs.writeFile(config.referenceFile, output, function(err) {
                 if (err) {
                     console.log('There was an error creating the reference file'.red.bold);
                     console.log(err);
-                    process.kill(1);
+                    process.exit(1);
                 } else {
                     console.log('Created reference file'.green.bold);
                     cb();
@@ -175,7 +175,7 @@ function addDeviceToCsv(deviceFields) {
                  if (err) {
                      console.log('There was an error appending the reference file'.red.bold);
                      console.log(err);
-                     process.kill(1);
+                     process.exit(1);
                  } else {
                      console.log('Appended reference file with device'.green.bold);
                      rl.close();
@@ -198,8 +198,14 @@ function checkArguments() {
                     removeDevice();
                     break;
                 case 'sanitise':
-                    sanitiseDevices(process.argv[3]);
+                    if (process.argv[3]) {
+                       sanitiseDevices(process.argv[3]);
+                    } else {
+                        console.log('Specify a path for the scenarios'.red);
+                        displayHelp();
+                    }
                     break;
+                    
                 default:
                     displayHelp();
             }
